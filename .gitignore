@@ -69,3 +69,13 @@ dmypy.json
 
 # Agent Rules & Context
 .agents/AGENTS.md
+
+# Databases locais/temporários (SQLite ou dumps)
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+
+# Variações do .env (ex: .env.local, .env.production)
+.env.*
+!.env.example
