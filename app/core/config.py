@@ -5,12 +5,15 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Finance Organizer API"
     ENVIRONMENT: str = "development"
 
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     POSTGRES_SERVER: str
     POSTGRES_PORT: int
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-
     DATABASE_URL: Optional[str] = None
 
     BACKEND_CORS_ORIGINS: List[str] = [
