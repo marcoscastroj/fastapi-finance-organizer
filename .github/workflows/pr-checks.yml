@@ -1,0 +1,37 @@
+name: PR Validation & Unit Tests
+    # Dispara a pipeline toda vez que um Pull Request for criado ou atualizado
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  unit-tests:
+      name: Run Pytest
+      runs-on: ubuntu-latest
+
+      env:
+        SECRET_KEY: "chave_secreta_ci_cd_github_actions_testes_123"
+        POSTGRES_SERVER: "localhost"
+        POSTGRES_PORT: "5432"
+        POSTGRES_USER: "postgres"
+        POSTGRES_PASSWORD: "postgres"
+        POSTGRES_DB: "test_db"
+
+      steps:
+        - name: Checkout do Código
+          uses: actions/checkout@v4
+
+        - name: Configurar Python 3.12
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+            cache: "pip"
+
+        - name: Instalar Dependências
+          run: |
+            python -m pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+        - name: Executar Testes Unitários e de Integração
+          run: |
+            pytest -v --tb=short
