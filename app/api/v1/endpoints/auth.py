@@ -8,7 +8,8 @@ from app.schemas.user import UserCreate, UserResponse
 from app.services.user_service import (
     authenticate_user,
     create_user,
-    get_user_by_email
+    get_user_by_email,
+    delete_user
 )
 from app.api.deps import get_current_user
 from app.models.user import User
@@ -59,3 +60,15 @@ async def login(request: Request, user_in: UserCreate, db: AsyncSession = Depend
 )
 async def read_user_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.delete(
+    "/me",
+    status_code = status.HTTP_204_NO_CONTENT,
+    summary = "Hard delete imediato da conta e limpeza em cascata no banco"
+)
+async def delete_user_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await delete_user(db, user=current_user)
+    return None

@@ -4,7 +4,7 @@ import uuid
 from app.core.security import get_password_hash
 from app.models.user import User
 from app.schemas.user import UserCreate
-from app.services.user_service import authenticate_user, create_user, get_user_by_email
+from app.services.user_service import authenticate_user, create_user, get_user_by_email, delete_user
 
 @pytest.mark.asyncio
 async def test_get_user_by_email_found():
@@ -118,3 +118,17 @@ async def test_authenticate_user_not_found():
     )
 
     assert authenticated_user is None
+
+@pytest.mark.asyncio
+async def test_delete_user_service():
+    mock_db = AsyncMock()
+    mock_user = User(
+        id = uuid.uuid4(),
+        email = "delete@example.com",
+        hashed_password="hashed_pwd_123"
+    )
+
+    await delete_user(mock_db, user=mock_user)
+
+    mock_db.delete.assert_called_once_with(mock_user)
+    mock_db.commit.assert_awaited_once()

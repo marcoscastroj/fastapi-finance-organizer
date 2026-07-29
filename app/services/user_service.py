@@ -29,3 +29,7 @@ async def authenticate_user(
     if not verify_password(password, user.hashed_password):
         return None
     return user
+
+async def delete_user(db: AsyncSession, user: User) -> None:
+    await db.delete(user)
+    await db.commit()

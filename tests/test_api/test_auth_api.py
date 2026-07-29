@@ -124,3 +124,37 @@ async def test_read_user_me_invalid_token(client: AsyncClient):
     headers = {"Authorization": "Bearer token_falso_e_invalido_123"}
     response = await client.get("/api/v1/auth/me", headers=headers)
     assert response.status_code == 401
+
+@pytest.mark.asyncio
+async def test_delete_user_me_success(client: AsyncClient):
+    """Garante que DELETE /api/v1/auth/me remove a conta e invalida logins/acessos futuros."""
+    user_payload = {
+        "email": "deletar.conta@exemplo.com",
+        "password": "senhaSegura123!"
+    }
+
+    # 1. Cadastra o usuário
+    await client.post("/api/v1/auth/register", json=user_payload)
+
+    # 2. Realiza o login para obter o token JWT
+    login_res = await client.post("/api/v1/auth/login", json=user_payload)
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 3. Solicita a exclusão da conta (deve retornar 204)
+    delete_res = await client.delete("/api/v1/auth/me", headers=headers)
+    assert delete_res.status_code == 204
+
+    # 4. Tenta acessar /me novamente com o mesmo token (deve falhar com 401)
+    me_res = await client.get("/api/v1/auth/me", headers=headers)
+    assert me_res.status_code == 401
+
+    # 5. Tenta logar novamente (deve falhar com 401 pois o usuário foi removido)
+    login_fail_res = await client.post("/api/v1/auth/login", json=user_payload)
+    assert login_fail_res.status_code == 401
+    
+@pytest.mark.asyncio
+async def test_delete_user_me_unauthorized(client: AsyncClient):
+    """Garante que tentar deletar a conta sem token de autenticação retorna 401 Unauthorized."""
+    response = await client.delete("/api/v1/auth/me")
+    assert response.status_code == 401
