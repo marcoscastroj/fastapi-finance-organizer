@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 class User(Base):
@@ -20,4 +20,8 @@ class User(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
+    )
+
+    accounts: Mapped[list["Account"]] = relationship(
+        "Account", back_populates="user", cascade="all, delete-orphan"
     )
