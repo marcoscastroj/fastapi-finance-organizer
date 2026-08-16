@@ -26,3 +26,6 @@ class Account(Base):
     )
 
     user: Mapped["User"] = relationship("User", back_populates="accounts")
+    transactions: Mapped[list["Transaction"]] = relationship(
+        "Transaction", back_populates="account", cascade="all, delete-orphan"
+    )
