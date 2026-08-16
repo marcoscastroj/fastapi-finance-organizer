@@ -1,3 +1,4 @@
+from decimal import Decimal
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -25,6 +26,10 @@ class AccountUpdate(BaseModel):
 class AccountResponse(AccountBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    saldo_calculado: Decimal = Field(
+        default=Decimal("0.00"),
+        description="Saldo dinâmico calculado da conta (soma de receitas - soma de despesas)",
+    )
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
