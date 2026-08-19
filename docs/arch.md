@@ -82,6 +82,67 @@ O repositório será estruturado em camadas para garantir baixo acoplamento e fa
     *   **Saldo Atual da Carteira (GET `/api/v1/accounts`):** Soma apenas transações efetivadas (`data <= hoje`), garantindo que lançamentos futuros não alterem o saldo real em caixa.
     *   **Saldo Projetado (GET `/api/v1/transactions/projections`):** Soma todas as transações previstas no mês/ano (`receitas_previstas - despesas_previstas`), permitindo visão futura de fluxo de caixa.
 
+### Módulo de Investimentos (Investments & Portfolio)
+
+*   **POST** `/api/v1/investments`
+    *   **Objetivo:** Cadastrar nova posição de investimento.
+    *   **Classes Suportadas:** `ACOES`, `FIIS`, `RENDA_FIXA`, `CRIPTO`, `ETF`, `RENDA_EMERGENCIAL`.
+    *   **Request (JSON):**
+        ```json
+        {
+          "ticker": "PETR4",
+          "nome": "Petrobras PN",
+          "classe": "ACOES",
+          "quantidade": 100,
+          "preco_medio": 35.50,
+          "cotacao_atual": 38.20
+        }
+        ```
+    *   **Response (201):** Objeto do investimento criado com IDs, timestamps e métricas individuais (`total_investido`, `patrimonio_atual`, `lucro_prejuizo_absoluto`, `rentabilidade_percentual`).
+
+*   **GET** `/api/v1/investments`
+    *   **Objetivo:** Listar posições de investimentos do usuário com filtro opcional por classe.
+    *   **Query Params:** `?classe=ACOES&skip=0&limit=100` (Opcionais).
+    *   **Response (200):** Array de objetos de investimentos.
+
+*   **GET** `/api/v1/investments/{investment_id}`
+    *   **Objetivo:** Obter detalhes de um investimento por ID.
+    *   **Response (200):** Objeto do investimento.
+
+*   **PUT** `/api/v1/investments/{investment_id}`
+    *   **Objetivo:** Atualizar dados de um investimento (quantidade, cotação atual, preço médio, nome, classe).
+    *   **Response (200):** Objeto atualizado.
+
+*   **DELETE** `/api/v1/investments/{investment_id}`
+    *   **Objetivo:** Excluir posição de investimento.
+    *   **Response (204 No Content):** Sem corpo.
+
+*   **GET** `/api/v1/investments/summary`
+    *   **Objetivo:** Obter totalizadores consolidados da carteira de investimentos (Patrimônio Total, Total Investido, Lucro Absoluto, Rentabilidade (%) e Distribuição por Classe).
+    *   **Response (200):**
+        ```json
+        {
+          "patrimonio_total": 45000.00,
+          "total_investido": 40000.00,
+          "lucro_prejuizo_absoluto": 5000.00,
+          "rentabilidade_percentual": 12.50,
+          "alocacao_por_classe": [
+            {
+              "classe": "ACOES",
+              "patrimonio_total": 20000.00,
+              "total_investido": 18000.00,
+              "percentual_carteira": 44.44
+            },
+            {
+              "classe": "RENDA_EMERGENCIAL",
+              "patrimonio_total": 15000.00,
+              "total_investido": 15000.00,
+              "percentual_carteira": 33.33
+            }
+          ]
+        }
+        ```
+
 ### Módulo de Extração Efêmera (V2)
 
 *   **POST** `/api/v1/transactions/extract`
