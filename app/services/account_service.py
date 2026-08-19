@@ -1,7 +1,8 @@
+from datetime import date
 from decimal import Decimal
 import uuid
 from typing import Sequence, Optional
-from sqlalchemy import case, func
+from sqlalchemy import and_, case, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.account import Account
@@ -9,12 +10,26 @@ from app.models.transaction import Transaction, TransactionType
 from app.schemas.account import AccountCreate, AccountUpdate
 
 
-def _calculate_balance_expr():
+def _calculate_balance_expr(target_date: Optional[date] = None):
+    ref_date = target_date or date.today()
     return func.coalesce(
         func.sum(
             case(
-                (Transaction.tipo == TransactionType.RECEITA, Transaction.valor),
-                else_=-Transaction.valor,
+                (
+                    and_(
+                        Transaction.data <= ref_date,
+                        Transaction.tipo == TransactionType.RECEITA,
+                    ),
+                    Transaction.valor,
+                ),
+                (
+                    and_(
+                        Transaction.data <= ref_date,
+                        Transaction.tipo == TransactionType.DESPESA,
+                    ),
+                    -Transaction.valor,
+                ),
+                else_=0,
             )
         ),
         0,

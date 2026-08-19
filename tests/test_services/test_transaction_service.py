@@ -4,12 +4,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import uuid
 from app.models.account import Account
-from app.models.transaction import Transaction, TransactionType
+from app.models.transaction import Transaction, TransactionType, RecurrenceType
 from app.schemas.transaction import TransactionCreate
 from app.services.transaction_service import (
     create_transaction,
     get_user_transactions,
     get_transaction_by_id,
+    get_monthly_projections,
     delete_transaction,
 )
 
@@ -32,6 +33,7 @@ async def test_create_transaction_success():
         data=date(2026, 8, 15),
         descricao="Freelance",
         conta_id=conta_id,
+        recorrencia=RecurrenceType.MENSAL,
     )
 
     created_tx = await create_transaction(mock_db, transaction_in=tx_in, user_id=user_id)
@@ -39,6 +41,7 @@ async def test_create_transaction_success():
     assert created_tx is not None
     assert created_tx.valor == Decimal("150.00")
     assert created_tx.tipo == TransactionType.RECEITA
+    assert created_tx.recorrencia == RecurrenceType.MENSAL
     assert created_tx.user_id == user_id
     assert created_tx.conta_id == conta_id
     mock_db.add.assert_called_once()
@@ -109,3 +112,30 @@ async def test_delete_transaction():
     await delete_transaction(mock_db, db_transaction=mock_tx)
     mock_db.delete.assert_called_once_with(mock_tx)
     mock_db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_get_monthly_projections():
+    mock_db = AsyncMock()
+    user_id = uuid.uuid4()
+    conta_id = uuid.uuid4()
+
+    mock_result = MagicMock()
+    mock_result.first.return_value = (Decimal("3500.00"), Decimal("1200.00"))
+    mock_db.execute.return_value = mock_result
+
+    projections = await get_monthly_projections(
+        mock_db,
+        user_id=user_id,
+        mes=8,
+        ano=2026,
+        conta_id=conta_id,
+    )
+
+    assert projections.mes == 8
+    assert projections.ano == 2026
+    assert projections.conta_id == conta_id
+    assert projections.receitas_previstas == Decimal("3500.00")
+    assert projections.despesas_previstas == Decimal("1200.00")
+    assert projections.saldo_projetado == Decimal("2300.00")
+
