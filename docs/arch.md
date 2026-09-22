@@ -46,20 +46,41 @@ O repositório será estruturado em camadas para garantir baixo acoplamento e fa
     *   **Response (201):** `{ "id": "uuid", "apelido": "C6 Bank", "saldo_calculado": 0.00 }`
 
 *   **GET** `/api/v1/accounts`
-    *   **Objetivo:** Listar contas do usuário calculando o saldo no momento da requisição.
+    *   **Objetivo:** Listar contas do usuário calculando o saldo real no momento da requisição (considera apenas transações com data <= data atual).
     *   **Response (200):** `[ { "id": "uuid", "apelido": "C6 Bank", "saldo_calculado": 1250.75 } ]`
 
-### Módulo de Transações (Transactions) - V1
+### Módulo de Transações (Transactions) - V1 & Lançamentos Futuros / Recorrência
 
 *   **POST** `/api/v1/transactions`
-    *   **Objetivo:** Registrar nova transação (Receita ou Despesa).
-    *   **Request (JSON):** `{ "valor": 50.00, "tipo": "DESPESA", "data": "2026-07-28", "descricao": "Combustível", "conta_id": "uuid" }`
-    *   **Response (201):** `{ "id": "uuid", "valor": 50.00, "tipo": "DESPESA", ... }`
+    *   **Objetivo:** Registrar nova transação (Receita ou Despesa, presente ou futura, com recorrência).
+    *   **Request (JSON):** `{ "valor": 50.00, "tipo": "DESPESA", "data": "2026-07-28", "descricao": "Combustível", "conta_id": "uuid", "recorrencia": "UNICA" }`
+    *   **Recorrências Suportadas:** `UNICA`, `SEMANAL`, `MENSAL`, `ANUAL` (Default: `UNICA`).
+    *   **Response (201):** `{ "id": "uuid", "valor": 50.00, "tipo": "DESPESA", "data": "2026-07-28", "descricao": "Combustível", "conta_id": "uuid", "recorrencia": "UNICA", "status": "EFETIVADA" }`
 
 *   **GET** `/api/v1/transactions`
-    *   **Objetivo:** Recuperar histórico filtrado (mês, ano, conta).
-    *   **Query Params:** `?mes=07&ano=2026&conta_id=uuid` (Opcionais)
-    *   **Response (200):** Array de objetos de transação.
+    *   **Objetivo:** Recuperar histórico filtrado (mês, ano, conta, status).
+    *   **Query Params:** `?mes=07&ano=2026&conta_id=uuid&status=EFETIVADA` (Opcionais).
+    *   **Status Suportados:** `EFETIVADA` (data <= hoje) ou `AGENDADA` (data > hoje).
+    *   **Response (200):** Array de objetos de transação com status dinâmico.
+
+*   **GET** `/api/v1/transactions/projections`
+    *   **Objetivo:** Obter totalizadores projetados do mês (Receitas Previstas, Despesas Previstas e Saldo Projetado).
+    *   **Query Params:** `?mes=08&ano=2026&conta_id=uuid` (`mes` e `ano` obrigatórios, `conta_id` opcional).
+    *   **Response (200):**
+        ```json
+        {
+          "mes": 8,
+          "ano": 2026,
+          "conta_id": "uuid | null",
+          "receitas_previstas": 5000.00,
+          "despesas_previstas": 2150.50,
+          "saldo_projetado": 2849.50
+        }
+        ```
+
+*   **Regra de Negócio de Saldos e Projeções:**
+    *   **Saldo Atual da Carteira (GET `/api/v1/accounts`):** Soma apenas transações efetivadas (`data <= hoje`), garantindo que lançamentos futuros não alterem o saldo real em caixa.
+    *   **Saldo Projetado (GET `/api/v1/transactions/projections`):** Soma todas as transações previstas no mês/ano (`receitas_previstas - despesas_previstas`), permitindo visão futura de fluxo de caixa.
 
 ### Módulo de Extração Efêmera (V2)
 

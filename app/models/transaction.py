@@ -13,6 +13,13 @@ class TransactionType(str, Enum):
     DESPESA = "DESPESA"
 
 
+class RecurrenceType(str, Enum):
+    UNICA = "UNICA"
+    SEMANAL = "SEMANAL"
+    MENSAL = "MENSAL"
+    ANUAL = "ANUAL"
+
+
 class Transaction(Base):
     __tablename__ = "transactions"
 
@@ -33,6 +40,16 @@ class Transaction(Base):
     )
     data: Mapped[date] = mapped_column(Date, nullable=False)
     descricao: Mapped[str] = mapped_column(String(255), nullable=False)
+    recorrencia: Mapped[RecurrenceType] = mapped_column(
+        SQLEnum(
+            RecurrenceType,
+            name="recurrence_type",
+            native_enum=False,
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        default=RecurrenceType.UNICA,
+    )
 
     conta_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

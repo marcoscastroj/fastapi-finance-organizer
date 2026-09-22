@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.transaction import TransactionCreate, TransactionResponse
+from app.schemas.transaction import (
+    TransactionCreate,
+    TransactionProjectionsResponse,
+    TransactionResponse,
+    TransactionStatus,
+)
 from app.services import transaction_service
 
 router = APIRouter()
@@ -43,6 +48,7 @@ async def list_transactions(
     mes: Optional[int] = Query(None, ge=1, le=12, description="Filtrar por mês (1 a 12)"),
     ano: Optional[int] = Query(None, ge=1900, le=2100, description="Filtrar por ano (ex: 2026)"),
     conta_id: Optional[uuid.UUID] = Query(None, description="Filtrar por ID da conta"),
+    status: Optional[TransactionStatus] = Query(None, description="Filtrar por status: EFETIVADA (data <= hoje) ou AGENDADA (data > hoje)"),
     skip: int = Query(0, ge=0, description="Número de registros a pular"),
     limit: int = Query(100, ge=1, le=100, description="Limite máximo de registros"),
     db: AsyncSession = Depends(get_db),
@@ -54,8 +60,31 @@ async def list_transactions(
         mes=mes,
         ano=ano,
         conta_id=conta_id,
+        status=status,
         skip=skip,
         limit=limit,
+    )
+
+
+@router.get(
+    "/projections",
+    response_model=TransactionProjectionsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Obter totalizadores e projeções financeiras do mês",
+)
+async def get_projections(
+    mes: int = Query(..., ge=1, le=12, description="Mês da projeção (1 a 12)"),
+    ano: int = Query(..., ge=1900, le=2100, description="Ano da projeção (ex: 2026)"),
+    conta_id: Optional[uuid.UUID] = Query(None, description="Filtrar por ID da conta"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await transaction_service.get_monthly_projections(
+        db,
+        user_id=current_user.id,
+        mes=mes,
+        ano=ano,
+        conta_id=conta_id,
     )
 
 
